@@ -1,0 +1,165 @@
+---
+title: "logistic_regression_on_creditcardbank_R"
+output: html_document
+---
+
+## Problem Statement 
+## The banks with the invent of credit card were more focused on the number of customers using their credit service but the drawback of them not being able to pay back the credit in time was an issue that soon followed, a system was in need to effectively decide the credit limit to be allowed to a person based on his previous credit history. Build a classification model using logistic regression to predict the credibility of the customer, in order to minimize the risk and maximize the profit of German Credit Bank.
+
+### load the dataset in a variable
+
+
+```{r setup, include=FALSE}
+library(readr)
+df_bank <- read_csv("BankCreditCard.csv")
+```
+
+## see the data
+
+```{r }
+head(df_bank)
+summary(df_bank)
+```
+
+## we use table functrion on our target column
+
+```{r , echo=FALSE}
+table(df_bank$Default_Payment)
+
+class(df_bank$Default_Payment)
+```
+
+## as we see no need columns we remove from the datset
+
+```{r}
+df_bank$`Customer ID` <- NULL
+head(df_bank)
+```
+## After we see what column we need to change in factor data type so we do this here we create a vector we apply on it.
+
+```{r}
+cols.to.factors <- c("Gender", "Academic_Qualification","Marital", 
+                     "Repayment_Status_Jan","Repayment_Status_Feb", 
+                     "Repayment_Status_March","Repayment_Status_April", 
+                     "Repayment_Status_May","Repayment_Status_June", 
+                     "Default_Payment")
+```
+
+## change into factors
+
+```{r}
+df_bank[cols.to.factors] <- lapply(df_bank[cols.to.factors], factor)
+str(df_bank)
+```
+
+## converting gender into male and female
+
+```{r}
+
+
+levels(df_bank$Gender)[levels(df_bank$Gender) == "1"] <- "Male" 
+levels(df_bank$Gender)[levels(df_bank$Gender) == "2"] <- "Female"
+
+str(df_bank)
+head(df_bank)
+```
+## converting acadamic_qalification into othen ( 1,2,3,4,5,6)
+### 1=Undergraduate, 2=Graduate, 3=Postgraduate, 4=Professional, 5=Others, 6=Unknown
+
+```{r}
+
+levels(df_bank$Academic_Qualification)[levels(df_bank$Academic_Qualification) == "1"] <- "Undergraduate"
+levels(df_bank$Academic_Qualification)[levels(df_bank$Academic_Qualification) == "2"] <- "Graduate"
+levels(df_bank$Academic_Qualification)[levels(df_bank$Academic_Qualification) == "3"] <- "Postgraduate"
+levels(df_bank$Academic_Qualification)[levels(df_bank$Academic_Qualification) == "4"] <- "Professional"
+levels(df_bank$Academic_Qualification)[levels(df_bank$Academic_Qualification) == "5"] <- "Others"
+levels(df_bank$Academic_Qualification)[levels(df_bank$Academic_Qualification) == "6"] <- "Unknown"
+
+head(df_bank)
+summary(df_bank)
+
+str(df_bank)
+```
+
+##  scaling of the data
+### converting the Default_ payment column in factor
+
+```{r}
+
+
+df_bank$Default_Payment <- factor(df_bank$Default_Payment, levels = c(0,1))
+str(df_bank)
+str(table(df_bank$Marital))
+```
+
+## as we martial column change in these type "0" have only 54 values and as we "1" have 13657 values these values also we add in single
+## converting martial into other (0,1,2, 3)
+### 1 or 0 = single, 2 = married and 3 = others
+
+```{r}
+levels(df_bank$Marital)[levels(df_bank$Marital) == "0"] <- "Single"
+levels(df_bank$Marital)[levels(df_bank$Marital) == "1"] <- "Single"
+levels(df_bank$Marital)[levels(df_bank$Marital) == "2"] <- "Married"
+levels(df_bank$Marital)[levels(df_bank$Marital) == "3"] <- "Others"
+
+str(df_bank$Marital)
+summary(unique(df_bank))
+```
+
+## we done here the cleaning , missing etc then we divide data into two dataframe train and test with the help of caTools
+
+```{r}
+library(caTools)
+
+set.seed(123)
+
+split_dfbank <- sample.split(df_bank$Default_Payment, SplitRatio = 0.75)
+train_dfbank <- subset(df_bank, split_dfbank == T)
+test_dfbank <- subset(df_bank, split_dfbank == F)
+```
+
+## creating a model
+
+```{r}
+
+modal_dfbank <- glm(formula = Default_Payment~., family = "binomial", data = train_dfbank)
+summary(modal_dfbank)
+```
+## predict the model
+
+```{r}
+# prediction 
+
+prediction <- predict(modal_dfbank, test_dfbank, type = "response")
+head(prediction)
+```
+
+## we can ifelse function use for if greater then 0.5 then eqaul to 1 and less then equal to 0
+
+
+```{r}
+test_dfbank$probabilityAnswer <- ifelse(prediction <= 0.5, 0 , 1)
+
+unique(test_dfbank$probabilityAnswer)
+```
+
+## create comfusion matrix
+
+```{r}
+# create the table
+
+table(test_dfbank$Default_Payment, test_dfbank$probabilityAnswer)
+table(test_dfbank$probabilityAnswer)
+```
+##
+
+```{r}
+sum(5543 + 582)
+
+ 
+```
+## total accuracy is 6125 = 5543 + 582 (overall 7500)
+### and this is called confussion matrix
+
+
+
